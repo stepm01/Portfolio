@@ -123,14 +123,6 @@ function App() {
             platforms to real-time translation systems, I turn complex problems into elegant code.
           </p>
           <div className="hero-buttons">
-            <button 
-              className="btn-primary" 
-              onClick={() => setIsModalOpen(true)}
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-            >
-              View CV
-            </button>
             <a 
               href="#projects" 
               className="btn-secondary"
@@ -188,7 +180,7 @@ function App() {
                 <h3 className="exp-role">Software Engineer Intern</h3>
                 <p className="exp-company">Mamble Labs · Yerevan, Armenia</p>
               </div>
-              <span className="exp-date">Jul – Dec 2022</span>
+              <span className="exp-date">Jul 2022 – Dec 2022</span>
             </div>
             <ul className="exp-description">
               <li>Developed and launched 3 production web apps with React and Next.js, improving load speed by 25%</li>
