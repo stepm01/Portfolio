@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 // CV file path - Place your CV in the public folder as: public/Stepan_Muradkhanyan.pdf
-const CV_PATH = '/Stepan_Muradkhanyan.pdf';
+const CV_PATH = '/Stepan Muradkhanyan.pdf';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -294,7 +294,7 @@ function App() {
           <div className="skill-category reveal" ref={addToRefs}>
             <h3>Frameworks & Libraries</h3>
             <div className="skill-list">
-              {['React', 'Next.js', 'Node.js', 'PyTorch', 'Pandas', 'Tailwind'].map((skill) => (
+              {['React.js', 'Next.js', 'Node.js', 'PyTorch', 'Pandas', 'Tailwind', 'FastAPI'].map((skill) => (
                 <span 
                   key={skill} 
                   className="skill-item"
