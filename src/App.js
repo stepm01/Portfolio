@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// CV file path - Place your CV in the public folder as: public/Stepan_Muradkhanyan.pdf
 const CV_PATH = '/Stepan Muradkhanyan.pdf';
 
 function App() {
@@ -10,7 +9,6 @@ function App() {
   const [isHovering, setIsHovering] = useState(false);
   const revealRefs = useRef([]);
 
-  // Cursor tracking
   useEffect(() => {
     const handleMouseMove = (e) => {
       setCursorPos({ x: e.clientX, y: e.clientY });
@@ -19,7 +17,6 @@ function App() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Scroll reveal
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -39,7 +36,6 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  // Close modal on escape
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') setIsModalOpen(false);
