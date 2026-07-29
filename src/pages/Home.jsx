@@ -1,35 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useProgress } from '@react-three/drei';
 import Scene3D from '../components/Scene3D';
 import { ABOUT, EXPERIENCE, EDUCATION, SKILLS, PROJECTS } from '../data/portfolio';
-
-// ── Loading Screen ─────────────────────────────────────────────────────────────
-function LoadingScreen({ phase }) {
-  // phase: 'init' | 'compiling' | 'fading'
-  return (
-    <div className={`loading-screen ${phase === 'fading' ? 'fade-out' : ''}`}>
-      <div className="loading-road">
-        <div className="loading-line" />
-        <div className="loading-line" />
-        <div className="loading-line" />
-      </div>
-
-      <div className="loading-car">🚗</div>
-
-      <div className="loading-content">
-        <div className="loading-logo">
-          stepan<span className="accent-dot">.</span>
-        </div>
-        <div className="loading-bar-wrap">
-          <div className={`loading-bar-fill ${phase !== 'init' ? 'full' : ''}`} />
-        </div>
-        <div className="loading-status">
-          {phase === 'init' ? 'Starting engine…' : 'Ready to drive'}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Scroll ranges for each overlay section
 const SECTIONS = {
@@ -62,6 +35,36 @@ function useScrollProgress(totalSections = 6) {
   }, []);
 
   return { scrollRef, progress };
+}
+
+// ── Loading Screen ─────────────────────────────────────────────────────────────
+function LoadingScreen({ visible }) {
+  const { progress } = useProgress();
+  // Clamp display progress: show at least 10% immediately so it looks alive
+  const display = Math.max(10, Math.round(progress));
+
+  return (
+    <div className={`loading-screen${visible ? '' : ' loading-screen--hidden'}`}>
+      <div className="loading-content">
+        {/* Animated car + road icon */}
+        <div className="loading-road">
+          <div className="loading-car">🚗</div>
+          <div className="loading-road-line" />
+        </div>
+
+        <div className="loading-title">
+          stepan<span className="loading-dot">.</span>
+        </div>
+        <div className="loading-sub">Initialising 3D scene</div>
+
+        {/* Progress bar */}
+        <div className="loading-bar-track">
+          <div className="loading-bar-fill" style={{ width: `${display}%` }} />
+        </div>
+        <div className="loading-pct">{display}%</div>
+      </div>
+    </div>
+  );
 }
 
 // ── Overlay Panels ─────────────────────────────────────────────────────────────
@@ -246,6 +249,23 @@ function Nav({ onScrollTo }) {
 export default function Home() {
   const navigate = useNavigate();
   const { scrollRef, progress } = useScrollProgress();
+  const [loadingVisible, setLoadingVisible] = useState(true);
+  const loadingTimerRef = useRef(null);
+
+  const dismissLoader = useCallback(() => {
+    if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
+    requestAnimationFrame(() => setLoadingVisible(false));
+  }, []);
+
+  // handleSceneReady is the unified callback for both success and error paths
+  const handleSceneReady = dismissLoader;
+
+  // Safety net: if onReady never fires (WebGL unavailable etc.), hide loader
+  // after 8 s so the WebGLBoundary fallback is never blocked.
+  useEffect(() => {
+    loadingTimerRef.current = setTimeout(dismissLoader, 8000);
+    return () => clearTimeout(loadingTimerRef.current);
+  }, [dismissLoader]);
 
   // Restore scroll position when returning from a project page
   useEffect(() => {
@@ -256,15 +276,6 @@ export default function Home() {
       // Wait one frame for the 700vh spacer to render
       requestAnimationFrame(() => window.scrollTo(0, y));
     }
-  }, []);
-
-  // Loading phases: 'init' → 'compiling' (WebGL ready) → 'fading' → null (gone)
-  const [loadPhase, setLoadPhase] = useState('init');
-
-  const handleSceneReady = useCallback(() => {
-    setLoadPhase('compiling');
-    setTimeout(() => setLoadPhase('fading'), 500);
-    setTimeout(() => setLoadPhase(null), 1100);
   }, []);
 
   // Save scroll position before navigating to a project, then navigate
@@ -286,11 +297,11 @@ export default function Home() {
 
   return (
     <>
-      {/* Scrollable spacer — 700vh tall */}
-      <div style={{ height: '700vh' }} />
+      {/* Loading screen — shown until WebGL is initialised */}
+      <LoadingScreen visible={loadingVisible} />
 
-      {/* Loading screen */}
-      {loadPhase && <LoadingScreen phase={loadPhase} />}
+      {/* Scrollable spacer — 700vh tall to give plenty of scroll room */}
+      <div style={{ height: '700vh' }} />
 
       {/* Fixed canvas layer */}
       <div className="canvas-container">

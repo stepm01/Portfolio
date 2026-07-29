@@ -1,6 +1,6 @@
-import { useRef, useMemo, Component } from 'react';
+import { useRef, useMemo, Component, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Stars, Line } from '@react-three/drei';
+import { Stars, Line, Preload } from '@react-three/drei';
 import * as THREE from 'three';
 import { PROJECTS } from '../data/portfolio';
 
@@ -14,6 +14,7 @@ class WebGLBoundary extends Component {
     // Dismiss the loading screen even when WebGL fails
     this.props.onReady?.();
   }
+
 
   render() {
     if (this.state.failed) {
@@ -337,10 +338,14 @@ export default function Scene3D({ scrollRef, onReady }) {
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.setClearColor('#020817');
-          setTimeout(() => onReady?.(), 600);
+          // Signal that WebGL is initialised and the first frame is ready
+          if (onReady) onReady();
         }}
       >
-        <SceneContents scrollRef={scrollRef} />
+        <Suspense fallback={null}>
+          <SceneContents scrollRef={scrollRef} />
+          <Preload all />
+        </Suspense>
       </Canvas>
     </WebGLBoundary>
   );

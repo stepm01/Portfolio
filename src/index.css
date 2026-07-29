@@ -720,6 +720,105 @@ body {
 }
 .not-found button:hover { border-color: var(--accent); color: var(--accent); }
 
+/* ── Loading Screen ───────────────────────────────────────────────────────────── */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  /* Fade-out transition */
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: all;
+}
+.loading-screen--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Animated road + car */
+.loading-road {
+  position: relative;
+  width: 160px;
+  height: 36px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.loading-road-line {
+  position: absolute;
+  bottom: 6px;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-2), var(--accent), transparent);
+  animation: road-scroll 1.2s linear infinite;
+}
+@keyframes road-scroll {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.loading-car {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  animation: car-bounce 0.6s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(96,165,250,0.6));
+}
+@keyframes car-bounce {
+  0%   { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(-4px); }
+}
+
+.loading-title {
+  font-family: var(--font-syne);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.loading-dot { color: var(--accent); }
+
+.loading-sub {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.loading-bar-track {
+  width: 200px;
+  height: 2px;
+  background: rgba(30,58,95,0.6);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.loading-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px var(--accent);
+}
+.loading-pct {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-3);
+  letter-spacing: 1px;
+}
+
 /* ── Responsive ───────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .main-nav { padding: 16px 20px; }
