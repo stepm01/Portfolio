@@ -45,6 +45,57 @@ export const PROJECTS = [
     github: 'https://github.com/stepm01',
     color: '#8b5cf6',
   },
+  {
+    id: 'pie-tournament',
+    title: 'PiE Tournament Hub',
+    emoji: '🤖',
+    short: 'Live robotics tournament platform supporting 40+ high-school teams.',
+    description:
+      'A real-time tournament management website built for Pioneers in Engineering, powering high-school robotics competitions. Features live match scheduling, live score updates, and team management dashboards used at UC Berkeley.',
+    tech: ['React', 'TypeScript', 'Node.js', 'WebSockets'],
+    highlights: [
+      'Supported 40+ competing high-school teams per event',
+      'Real-time score updates via WebSocket connections',
+      'Team registration and bracket management system',
+      'Led cross-functional team of 15 engineers and designers',
+    ],
+    github: 'https://github.com/stepm01',
+    color: '#10b981',
+  },
+  {
+    id: 'algoviz',
+    title: 'AlgoViz',
+    emoji: '📊',
+    short: 'Interactive visualizer for sorting and graph algorithms.',
+    description:
+      'An interactive web application that animates classic sorting and graph traversal algorithms step-by-step. Built to deepen understanding of data structures and algorithms, with adjustable speed controls and custom input.',
+    tech: ['JavaScript', 'React', 'CSS Animations'],
+    highlights: [
+      '12+ algorithms visualized including QuickSort and Dijkstra',
+      'Adjustable animation speed and user-defined input arrays',
+      'Color-coded state transitions for comparisons and swaps',
+      'Responsive design with mobile support',
+    ],
+    github: 'https://github.com/stepm01',
+    color: '#f59e0b',
+  },
+  {
+    id: 'mamble-apps',
+    title: 'Mamble Production Apps',
+    emoji: '⚡',
+    short: '3 production web apps shipped during SWE internship at Mamble Labs.',
+    description:
+      'Designed and launched three production-grade web applications during a software engineering internship at Mamble Labs in Yerevan, Armenia. Focused on performance, UI consistency, and eliminating API bottlenecks across the platform.',
+    tech: ['React', 'Next.js', 'Tailwind CSS', 'FastAPI'],
+    highlights: [
+      '25% improvement in page load speed through code splitting',
+      '30% reduction in support tickets via consistent UI system',
+      'Refactored legacy API modules to remove data-fetching bottlenecks',
+      '3 apps delivered from design to production deployment',
+    ],
+    github: 'https://github.com/stepm01',
+    color: '#ec4899',
+  },
 ];
 
 export const EXPERIENCE = [

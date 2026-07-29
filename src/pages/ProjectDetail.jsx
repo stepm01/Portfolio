@@ -116,6 +116,42 @@ export default function ProjectDetail() {
                     </div>
                   </>
                 )}
+                {project.id === 'pie-tournament' && (
+                  <>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>40+</div>
+                      <div className="stat-label">Teams</div>
+                    </div>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>Live</div>
+                      <div className="stat-label">Real-time</div>
+                    </div>
+                  </>
+                )}
+                {project.id === 'algoviz' && (
+                  <>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>12+</div>
+                      <div className="stat-label">Algorithms</div>
+                    </div>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>0ms</div>
+                      <div className="stat-label">Server Needed</div>
+                    </div>
+                  </>
+                )}
+                {project.id === 'mamble-apps' && (
+                  <>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>-25%</div>
+                      <div className="stat-label">Load Time</div>
+                    </div>
+                    <div className="pd-stat">
+                      <div className="stat-value" style={{ color: project.color }}>3</div>
+                      <div className="stat-label">Apps Shipped</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

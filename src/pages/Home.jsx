@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProgress } from '@react-three/drei';
-import Scene3D from '../components/Scene3D';
+import Scene3D, { PROJECT_STOPS } from '../components/Scene3D';
 import { ABOUT, EXPERIENCE, EDUCATION, SKILLS, PROJECTS } from '../data/portfolio';
 
 // Scroll ranges for each overlay section
 const SECTIONS = {
-  hero:       [0,    0.14],
-  project0:   [0.22, 0.40],
-  project1:   [0.50, 0.68],
-  experience: [0.71, 0.88],
-  contact:    [0.90, 1.00],
+  hero:       [0,    0.07],
+  experience: [0.65, 0.80],
+  contact:    [0.85, 1.00],
 };
 
 function sectionOpacity(progress, [start, end], fade = 0.04) {
@@ -216,10 +214,9 @@ function ProgressBar({ progress }) {
     <div className="progress-bar-track">
       <div className="progress-bar-fill" style={{ width: `${progress * 100}%` }} />
       <div className="progress-label">
-        {progress < 0.15 ? 'Start' :
-         progress < 0.45 ? 'Projects' :
-         progress < 0.70 ? 'Projects' :
-         progress < 0.90 ? 'Experience' : 'Contact'}
+        {progress < 0.08 ? 'Start' :
+         progress < 0.63 ? 'Projects' :
+         progress < 0.84 ? 'Experience' : 'Contact'}
       </div>
     </div>
   );
@@ -234,9 +231,9 @@ function Nav({ onScrollTo }) {
       </div>
       <div className="nav-links-row">
         <button onClick={() => onScrollTo(0)}>Home</button>
-        <button onClick={() => onScrollTo(0.30)}>Projects</button>
-        <button onClick={() => onScrollTo(0.75)}>Experience</button>
-        <button onClick={() => onScrollTo(0.92)}>Contact</button>
+        <button onClick={() => onScrollTo(0.11)}>Projects</button>
+        <button onClick={() => onScrollTo(0.67)}>Experience</button>
+        <button onClick={() => onScrollTo(0.87)}>Contact</button>
       </div>
       <a href="/Stepan Muradkhanyan.pdf" download className="nav-cv-btn">
         View CV
@@ -290,8 +287,9 @@ export default function Home() {
   };
 
   const heroOpacity    = sectionOpacity(progress, SECTIONS.hero, 0.05);
-  const proj0Opacity   = sectionOpacity(progress, SECTIONS.project0, 0.06);
-  const proj1Opacity   = sectionOpacity(progress, SECTIONS.project1, 0.06);
+  const projectOpacities = PROJECT_STOPS.map(stop =>
+    sectionOpacity(progress, [stop.t - 0.08, stop.t + 0.08], 0.06)
+  );
   const expOpacity     = sectionOpacity(progress, SECTIONS.experience, 0.05);
   const contactOpacity = sectionOpacity(progress, SECTIONS.contact, 0.05);
 
@@ -315,19 +313,15 @@ export default function Home() {
 
         {heroOpacity > 0.01 && <HeroOverlay opacity={heroOpacity} />}
 
-        {proj0Opacity > 0.01 && (
-          <ProjectCardOverlay
-            project={PROJECTS[0]}
-            opacity={proj0Opacity}
-            onNavigate={handleProjectNavigate}
-          />
-        )}
-        {proj1Opacity > 0.01 && (
-          <ProjectCardOverlay
-            project={PROJECTS[1]}
-            opacity={proj1Opacity}
-            onNavigate={handleProjectNavigate}
-          />
+        {PROJECT_STOPS.map((stop, i) =>
+          projectOpacities[i] > 0.01 && (
+            <ProjectCardOverlay
+              key={stop.index}
+              project={PROJECTS[stop.index]}
+              opacity={projectOpacities[i]}
+              onNavigate={handleProjectNavigate}
+            />
+          )
         )}
 
         {expOpacity > 0.01 && <ExperienceOverlay opacity={expOpacity} />}

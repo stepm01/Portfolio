@@ -54,8 +54,11 @@ export const curve = new THREE.CatmullRomCurve3(ROAD_POINTS);
 
 // t positions of each project stop on the curve
 export const PROJECT_STOPS = [
-  { t: 0.30, index: 0 },
-  { t: 0.60, index: 1 },
+  { t: 0.11, index: 0 },
+  { t: 0.22, index: 1 },
+  { t: 0.33, index: 2 },
+  { t: 0.44, index: 3 },
+  { t: 0.55, index: 4 },
 ];
 
 // ── Road Surface Geometry ──────────────────────────────────────────────────────
