@@ -1,7 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Scene3D from '../components/Scene3D';
 import { ABOUT, EXPERIENCE, EDUCATION, SKILLS, PROJECTS } from '../data/portfolio';
+
+// ── Loading Screen ─────────────────────────────────────────────────────────────
+function LoadingScreen({ phase }) {
+  // phase: 'init' | 'compiling' | 'fading'
+  return (
+    <div className={`loading-screen ${phase === 'fading' ? 'fade-out' : ''}`}>
+      <div className="loading-road">
+        <div className="loading-line" />
+        <div className="loading-line" />
+        <div className="loading-line" />
+      </div>
+
+      <div className="loading-car">🚗</div>
+
+      <div className="loading-content">
+        <div className="loading-logo">
+          stepan<span className="accent-dot">.</span>
+        </div>
+        <div className="loading-bar-wrap">
+          <div className={`loading-bar-fill ${phase !== 'init' ? 'full' : ''}`} />
+        </div>
+        <div className="loading-status">
+          {phase === 'init' ? 'Starting engine…' : 'Ready to drive'}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Scroll ranges for each overlay section
 const SECTIONS = {
@@ -57,19 +85,53 @@ function HeroOverlay({ opacity }) {
   );
 }
 
-function ProjectHintOverlay({ opacity, index }) {
-  const project = PROJECTS[index];
-  if (!project) return null;
+function ProjectCardOverlay({ project, opacity, onNavigate }) {
+  const slideX = `${(1 - opacity) * 55}px`;
   return (
     <div
-      className="overlay-panel hint-panel"
-      style={{ opacity, pointerEvents: 'none', '--accent': project.color }}
+      className="project-card-overlay"
+      style={{
+        opacity,
+        transform: `translateY(-50%) translateX(${slideX})`,
+        pointerEvents: opacity > 0.05 ? 'auto' : 'none',
+        borderTopColor: project.color,
+        boxShadow: `0 25px 60px rgba(0,0,0,0.5), 0 0 40px ${project.color}18`,
+      }}
     >
-      <div className="hint-label">
-        <span className="hint-dot" /> Approaching
+      <div className="pco-header">
+        <span className="pco-emoji">{project.emoji}</span>
+        <div className="pco-tag" style={{ color: project.color }}>● Project Stop</div>
       </div>
-      <div className="hint-title">{project.title}</div>
-      <div className="hint-sub">Look right for the project card</div>
+
+      <h2 className="pco-title">{project.title}</h2>
+      <p className="pco-desc">{project.description}</p>
+
+      <div className="pco-tech">
+        {project.tech.map((t) => (
+          <span
+            key={t}
+            className="pco-tech-tag"
+            style={{
+              color: project.color,
+              background: project.color + '15',
+              borderColor: project.color + '40',
+            }}
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+
+      <button
+        className="pco-btn"
+        style={{ background: project.color }}
+        onClick={() => onNavigate(`/project/${project.id}`)}
+      >
+        Explore Project
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -185,25 +247,54 @@ export default function Home() {
   const navigate = useNavigate();
   const { scrollRef, progress } = useScrollProgress();
 
+  // Restore scroll position when returning from a project page
+  useEffect(() => {
+    const saved = sessionStorage.getItem('portfolioScrollY');
+    if (saved) {
+      sessionStorage.removeItem('portfolioScrollY');
+      const y = parseInt(saved, 10);
+      // Wait one frame for the 700vh spacer to render
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+  }, []);
+
+  // Loading phases: 'init' → 'compiling' (WebGL ready) → 'fading' → null (gone)
+  const [loadPhase, setLoadPhase] = useState('init');
+
+  const handleSceneReady = useCallback(() => {
+    setLoadPhase('compiling');
+    setTimeout(() => setLoadPhase('fading'), 500);
+    setTimeout(() => setLoadPhase(null), 1100);
+  }, []);
+
+  // Save scroll position before navigating to a project, then navigate
+  const handleProjectNavigate = useCallback((path) => {
+    sessionStorage.setItem('portfolioScrollY', String(window.scrollY));
+    navigate(path);
+  }, [navigate]);
+
   const scrollTo = (targetProgress) => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     window.scrollTo({ top: max * targetProgress, behavior: 'smooth' });
   };
 
-  const heroOpacity = sectionOpacity(progress, SECTIONS.hero, 0.05);
-  const proj0Opacity = sectionOpacity(progress, SECTIONS.project0, 0.06);
-  const proj1Opacity = sectionOpacity(progress, SECTIONS.project1, 0.06);
-  const expOpacity   = sectionOpacity(progress, SECTIONS.experience, 0.05);
+  const heroOpacity    = sectionOpacity(progress, SECTIONS.hero, 0.05);
+  const proj0Opacity   = sectionOpacity(progress, SECTIONS.project0, 0.06);
+  const proj1Opacity   = sectionOpacity(progress, SECTIONS.project1, 0.06);
+  const expOpacity     = sectionOpacity(progress, SECTIONS.experience, 0.05);
   const contactOpacity = sectionOpacity(progress, SECTIONS.contact, 0.05);
 
   return (
     <>
-      {/* Scrollable spacer — 700vh tall to give plenty of scroll room */}
+      {/* Scrollable spacer — 700vh tall */}
       <div style={{ height: '700vh' }} />
+
+      {/* Loading screen */}
+      {loadPhase && <LoadingScreen phase={loadPhase} />}
 
       {/* Fixed canvas layer */}
       <div className="canvas-container">
-        <Scene3D scrollRef={scrollRef} onNavigate={navigate} />
+        <Scene3D scrollRef={scrollRef} onReady={handleSceneReady} />
       </div>
 
       {/* Fixed UI layer */}
@@ -212,8 +303,22 @@ export default function Home() {
         <ProgressBar progress={progress} />
 
         {heroOpacity > 0.01 && <HeroOverlay opacity={heroOpacity} />}
-        {proj0Opacity > 0.01 && <ProjectHintOverlay opacity={proj0Opacity} index={0} />}
-        {proj1Opacity > 0.01 && <ProjectHintOverlay opacity={proj1Opacity} index={1} />}
+
+        {proj0Opacity > 0.01 && (
+          <ProjectCardOverlay
+            project={PROJECTS[0]}
+            opacity={proj0Opacity}
+            onNavigate={handleProjectNavigate}
+          />
+        )}
+        {proj1Opacity > 0.01 && (
+          <ProjectCardOverlay
+            project={PROJECTS[1]}
+            opacity={proj1Opacity}
+            onNavigate={handleProjectNavigate}
+          />
+        )}
+
         {expOpacity > 0.01 && <ExperienceOverlay opacity={expOpacity} />}
         {contactOpacity > 0.01 && <ContactOverlay opacity={contactOpacity} />}
       </div>
