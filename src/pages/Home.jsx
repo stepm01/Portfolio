@@ -102,10 +102,15 @@ function ProjectCardOverlay({ project, opacity, onNavigate }) {
       <div className="pco-header">
         <span className="pco-emoji">{project.emoji}</span>
         <div className="pco-tag" style={{ color: project.color }}>● Project Stop</div>
+        {project.liveDemo && (
+          <span className="pco-live" style={{ color: project.color, borderColor: project.color + '55', background: project.color + '14' }}>
+            <span className="pco-live-dot" style={{ background: project.color }} /> Live
+          </span>
+        )}
       </div>
 
       <h2 className="pco-title">{project.title}</h2>
-      <p className="pco-desc">{project.description}</p>
+      <p className="pco-desc">{project.short || project.description}</p>
 
       <div className="pco-tech">
         {project.tech.map((t) => (
