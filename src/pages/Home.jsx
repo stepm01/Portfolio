@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useProgress } from '@react-three/drei';
 import Scene3D, { PROJECT_STOPS } from '../components/Scene3D';
 import { ABOUT, EXPERIENCE, EDUCATION, SKILLS, PROJECTS } from '../data/portfolio';
+import useIsMobile from '../hooks/useIsMobile';
+import MobileHome from './MobileHome';
 
 // Scroll ranges for each overlay section
 const SECTIONS = {
@@ -87,13 +89,20 @@ function HeroOverlay({ opacity }) {
 }
 
 function ProjectCardOverlay({ project, opacity, onNavigate }) {
-  const slideX = `${(1 - opacity) * 55}px`;
+  // "Emerge from the sign": the card grows out of the road sign (left/road
+  // side of the screen) and scales up toward the viewer as you approach.
+  const t = opacity; // proximity 0..1
+  const scale = 0.5 + t * 0.5; // grow from small
+  const tx = (1 - t) * -46; // start pulled toward the road, settle into place
+  const blur = (1 - t) * 4; // slight depth blur when far
   return (
     <div
       className="project-card-overlay"
       style={{
         opacity,
-        transform: `translateY(-50%) translateX(${slideX})`,
+        transform: `translateY(-50%) translateX(${tx}px) scale(${scale})`,
+        transformOrigin: '0% 50%',
+        filter: blur > 0.2 ? `blur(${blur}px)` : 'none',
         pointerEvents: opacity > 0.05 ? 'auto' : 'none',
         borderTopColor: project.color,
         boxShadow: `0 25px 60px rgba(0,0,0,0.5), 0 0 40px ${project.color}18`,
@@ -249,6 +258,12 @@ function Nav({ onScrollTo }) {
 
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function Home() {
+  const isMobile = useIsMobile();
+  return isMobile ? <MobileHome /> : <DesktopHome />;
+}
+
+// ── Desktop 3D experience ────────────────────────────────────────────────────────
+function DesktopHome() {
   const navigate = useNavigate();
   const { scrollRef, progress } = useScrollProgress();
   const [loadingVisible, setLoadingVisible] = useState(true);
@@ -292,8 +307,10 @@ export default function Home() {
   };
 
   const heroOpacity    = sectionOpacity(progress, SECTIONS.hero, 0.05);
+  // Narrow reveal band so the first card is fully hidden (opacity 0) at the top
+  // of the page and only emerges once you scroll toward its stop.
   const projectOpacities = PROJECT_STOPS.map(stop =>
-    sectionOpacity(progress, [stop.t - 0.08, stop.t + 0.08], 0.06)
+    sectionOpacity(progress, [stop.t - 0.055, stop.t + 0.055], 0.045)
   );
   const expOpacity     = sectionOpacity(progress, SECTIONS.experience, 0.05);
   const contactOpacity = sectionOpacity(progress, SECTIONS.contact, 0.05);
