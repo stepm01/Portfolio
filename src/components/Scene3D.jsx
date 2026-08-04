@@ -52,6 +52,109 @@ export const ROAD_POINTS = [
 
 export const curve = new THREE.CatmullRomCurve3(ROAD_POINTS);
 
+// ── 3D project-card face texture ────────────────────────────────────────────────
+// Draws a project card (emoji, tag, title, tech) onto a canvas so it can be
+// mapped onto the floating 3D card mesh in the scene.
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, cx, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lineHeight));
+  return lines.length;
+}
+
+function makeCardTexture(project) {
+  const w = 440, h = 580;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const pad = 8;
+  const r = 34;
+
+  // Card body
+  roundRectPath(ctx, pad, pad, w - pad * 2, h - pad * 2, r);
+  ctx.fillStyle = '#0a1730';
+  ctx.fill();
+
+  // Clip to card for inner fills
+  ctx.save();
+  roundRectPath(ctx, pad, pad, w - pad * 2, h - pad * 2, r);
+  ctx.clip();
+  // Top accent bar
+  ctx.fillStyle = project.color;
+  ctx.fillRect(pad, pad, w - pad * 2, 12);
+  // Top-down colour glow
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, project.color + '3a');
+  grad.addColorStop(0.45, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Emoji
+  ctx.font = '150px serif';
+  ctx.fillText(project.emoji, w / 2, 175);
+
+  // Tag
+  ctx.font = 'bold 22px monospace';
+  ctx.fillStyle = project.color;
+  ctx.fillText('● PROJECT', w / 2, 300);
+
+  // Title (wrap up to 2 lines)
+  ctx.fillStyle = '#f1f5f9';
+  ctx.font = 'bold 42px sans-serif';
+  wrapText(ctx, project.title, w / 2, 355, w - 80, 48);
+
+  // Tech row
+  ctx.font = '20px monospace';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(project.tech.slice(0, 3).join('  ·  '), w / 2, h - 96);
+
+  // Explore pill
+  const pillW = 220, pillH = 52, pillX = (w - pillW) / 2, pillY = h - 78;
+  roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+  ctx.fillStyle = project.color;
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText('Explore  →', w / 2, pillY + pillH / 2 + 1);
+
+  // Border
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = project.color;
+  roundRectPath(ctx, pad, pad, w - pad * 2, h - pad * 2, r);
+  ctx.stroke();
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  return tex;
+}
+
 // t positions of each project stop on the curve. The first stop starts at
 // 0.15 (not 0) so no card is visible until the hero has scrolled away, and the
 // last stays before the experience section (~0.65).
@@ -225,55 +328,92 @@ function CarModel({ scrollRef }) {
   );
 }
 
-// ── Project Marker (3D visual only — card is rendered in the UI layer) ─────────
+// ── Project Marker (floating 3D project card in the scene) ─────────────────────
+const CARD_H = 5.0; // height the card floats at
+
 function ProjectMarker({ stop, scrollRef }) {
   const project = PROJECTS[stop.index];
-  const pillarMatRef = useRef(null);
+  const cardRef = useRef(null);
+  const frameMatRef = useRef(null);
   const lightRef = useRef(null);
+  const pColor = project.color;
 
-  const signPos = useMemo(() => {
+  const tex = useMemo(() => makeCardTexture(project), [project.id]);
+
+  // Position beside the road and the base angle so the card faces the road.
+  const { signPos, baseAngle } = useMemo(() => {
     const pos = curve.getPointAt(stop.t);
     const tan = curve.getTangentAt(stop.t);
     const perp = new THREE.Vector3(-tan.z, 0, tan.x);
-    return pos.clone().addScaledVector(perp, -11);
+    const p = pos.clone().addScaledVector(perp, -10);
+    return { signPos: p, baseAngle: Math.atan2(perp.x, perp.z) };
   }, [stop.t]);
 
   useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
     const dist = Math.abs(scrollRef.current - stop.t);
     const vis = Math.max(0, 1 - dist / 0.15);
-    if (pillarMatRef.current) {
-      pillarMatRef.current.emissiveIntensity = 0.5 + Math.sin(clock.elapsedTime * 2.5) * 0.4;
+
+    if (cardRef.current) {
+      // Gentle rotation + bob for the 3D floating-card effect; grows a touch
+      // as the car approaches the stop.
+      cardRef.current.rotation.y = baseAngle + Math.sin(t * 0.7 + stop.index) * 0.28;
+      cardRef.current.rotation.z = Math.sin(t * 0.9 + stop.index) * 0.03;
+      cardRef.current.position.y = CARD_H + Math.sin(t * 1.1 + stop.index) * 0.3;
+      const s = 0.92 + vis * 0.22;
+      cardRef.current.scale.setScalar(s);
+    }
+    if (frameMatRef.current) {
+      frameMatRef.current.emissiveIntensity = 0.55 + Math.sin(t * 2.5) * 0.35;
     }
     if (lightRef.current) {
       lightRef.current.intensity = vis * 5;
     }
   });
 
-  const pColor = project.color;
-
   return (
     <group position={[signPos.x, 0, signPos.z]}>
-      {/* Glowing pillar */}
-      <mesh position={[0, 3.5, 0]}>
-        <boxGeometry args={[0.28, 7, 0.28]} />
-        <meshStandardMaterial
-          ref={pillarMatRef}
-          color={pColor}
-          emissive={pColor}
-          emissiveIntensity={0.8}
-          metalness={0.9}
-        />
+      {/* Slim glowing stand anchoring the card to the road */}
+      <mesh position={[0, CARD_H / 2 - 1, 0]}>
+        <boxGeometry args={[0.14, CARD_H, 0.14]} />
+        <meshStandardMaterial color={pColor} emissive={pColor} emissiveIntensity={0.7} metalness={0.9} />
       </mesh>
-      {/* Sign board */}
-      <mesh position={[0, 7.5, 0]}>
-        <boxGeometry args={[3.8, 1.4, 0.18]} />
-        <meshStandardMaterial color="#071226" metalness={0.6} roughness={0.4} />
+      <mesh position={[0, 0.06, 0]}>
+        <cylinderGeometry args={[0.5, 0.7, 0.12, 24]} />
+        <meshStandardMaterial color={pColor} emissive={pColor} emissiveIntensity={0.5} metalness={0.8} />
       </mesh>
-      <mesh position={[0, 7.5, 0.1]}>
-        <boxGeometry args={[3.6, 1.2, 0.05]} />
-        <meshStandardMaterial color={pColor} emissive={pColor} emissiveIntensity={0.3} metalness={0.5} />
-      </mesh>
-      <pointLight ref={lightRef} color={pColor} intensity={0} distance={25} decay={2} position={[0, 4, 0]} />
+
+      {/* Floating 3D card */}
+      <group ref={cardRef} position={[0, CARD_H, 0]}>
+        {/* Card body (gives real thickness → 3D) */}
+        <mesh castShadow>
+          <boxGeometry args={[4.1, 5.4, 0.24]} />
+          <meshStandardMaterial color="#0a1730" metalness={0.35} roughness={0.5} />
+        </mesh>
+        {/* Glowing frame behind the card */}
+        <mesh position={[0, 0, -0.14]}>
+          <boxGeometry args={[4.45, 5.75, 0.06]} />
+          <meshStandardMaterial
+            ref={frameMatRef}
+            color={pColor}
+            emissive={pColor}
+            emissiveIntensity={0.7}
+            metalness={0.6}
+          />
+        </mesh>
+        {/* Front face with the drawn card texture */}
+        <mesh position={[0, 0, 0.13]}>
+          <planeGeometry args={[4.1, 5.4]} />
+          <meshBasicMaterial map={tex} transparent toneMapped={false} />
+        </mesh>
+        {/* Back face (so the card reads from behind too) */}
+        <mesh position={[0, 0, -0.13]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[4.1, 5.4]} />
+          <meshBasicMaterial map={tex} transparent toneMapped={false} opacity={0.85} />
+        </mesh>
+      </group>
+
+      <pointLight ref={lightRef} color={pColor} intensity={0} distance={26} decay={2} position={[0, CARD_H, 1]} />
     </group>
   );
 }
